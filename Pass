@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Overview QR Generator</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+  :root{
+    --bg:#0f0f10; --card:#1c1c1c; --line:#2a2a2a;
+    --text:#ffffff; --muted:#b9b9b9; --accent:#7ab4ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:24px 14px}
+  .wrap{max-width:860px;margin:0 auto}
+  .card{background:var(--card);border:1px solid rgba(255,255,255,.05);border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,.45);padding:20px}
+  .top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .spark{width:18px;height:18px;border-radius:6px;background:linear-gradient(135deg,#6ad7ff,#8b6bff);box-shadow:0 0 18px rgba(122,180,255,.35)}
+  .title{font-weight:800;color:var(--accent);letter-spacing:.2px}
+  .hint{color:var(--muted);font-size:13px;margin-top:2px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  @media(max-width:720px){.grid{grid-template-columns:1fr}}
+  label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
+  input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#111;color:#fff;outline:none}
+  input::placeholder{color:#6f6f6f}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  button{padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#2b2f36;color:#e9eefc;cursor:pointer;font-weight:700}
+  button:disabled{opacity:.55;cursor:not-allowed}
+  .row{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;align-items:flex-start}
+  .box{flex:1;min-width:280px;border:1px solid var(--line);border-radius:14px;padding:14px;background:#111}
+  .box h3{margin:0 0 10px 0;font-size:14px;color:#eaeaea}
+  .preview{white-space:pre-wrap;line-height:1.55;font-size:14px;color:#eaeaea}
+  #qrcodeWrap{display:inline-block;background:#fff;padding:14px;border-radius:14px}
+  .status{margin-top:10px;font-size:13px;color:var(--muted)}
+  .error{margin-top:10px;font-size:13px;color:#ff9aa2}
+
+  /* Result view (scan করলে যেটা দেখাবে) */
+  .resultCard{
+    background:#1c1c1c;border:1px solid rgba(255,255,255,.05);
+    border-radius:18px;padding:26px 22px;box-shadow:0 10px 30px rgba(0,0,0,.45);
+    max-width:720px;margin:0 auto;
+  }
+  .aiBadge{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .aiText{font-weight:800;color:var(--accent)}
+  .desc{font-size:18px;line-height:1.45;margin:10px 0 18px 0;color:#eaeaea}
+  ul{margin:0;padding-left:20px}
+  li{margin:12px 0;line-height:1.5}
+  strong{font-weight:800}
+  .btnFake{
+    margin-top:18px;width:100%;padding:14px 16px;border-radius:12px;border:1px solid var(--line);
+    background:#2b2f36;color:#e9eefc;font-weight:700;text-align:center;user-select:none
+  }
+  .btnFake small{display:block;margin-top:4px;color:var(--muted);font-weight:500}
+</style>
+</head>
+
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* -----------------------------
+   Helpers
+------------------------------*/
+function esc(s){
+  return String(s || "").replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[m]));
+}
+function getParam(k){
+  const u = new URL(location.href);
+  return u.searchParams.get(k) || "";
+}
+
+/* -----------------------------
+   RESULT VIEW
+------------------------------*/
+function renderResultView(){
+  const name = getParam("name");
+  const passport = getParam("passport");
+  const visa = getParam("visa");
+  const validity = getParam("validity");
+
+  const sentence = "The image shows a document from the Kingdom of Cambodia General Department of Immigration for a stay permit.";
+
+  document.getElementById("app").innerHTML = `
+    <div class="resultCard">
+      <div class="aiBadge">
+        <div class="spark"></div>
+        <div class="aiText">AI Overview</div>
+      </div>
+
+      <div class="desc">${esc(sentence)}</div>
+
+      <ul>
+        <li><strong>Name:</strong> ${esc(name || "-")}</li>
+        <li><strong>Passport:</strong> ${esc(passport || "-")}</li>
+        <li><strong>Visa Type:</strong> ${esc(visa || "-")}</li>
+        <li><strong>Validity:</strong> ${esc(validity || "-")}</li>
+      </ul>
+
+      
+  `;
+}
+
+/* -----------------------------
+   GENERATOR VIEW
+------------------------------*/
+function renderGeneratorView(){
+  document.getElementById("app").innerHTML = `
+    <div class="card">
+      <div class="top">
+        <div class="spark"></div>
+        <div>
+          <div class="title">AI Overview QR Generator</div>
+          <div class="hint">This fixes QR overflow by encoding a short URL. Scan opens the same page and shows the summary.</div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>Name</label>
+          <input id="name" type="text" placeholder="Hossain Shamim" />
+        </div>
+        <div>
+          <label>Passport</label>
+          <input id="passport" type="text" placeholder="A18656351" />
+        </div>
+        <div>
+          <label>Visa Type</label>
+          <input id="visa" type="text" placeholder="EB (Multiple Entries)" />
+        </div>
+        <div>
+          <label>Validity</label>
+          <input id="validity" type="text" placeholder="Issued January 22, 2026, and expires January 21, 2027." />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="genBtn">Generate QR</button>
+        <button id="downloadBtn" disabled>Download QR (PNG)</button>
+      </div>
+
+      <div class="row">
+        <div class="box">
+          <h3>Text Preview (same structure)</h3>
+          <div class="preview" id="previewText">Fill the fields and click “Generate QR”.</div>
+          <div class="status" id="libStatus"></div>
+          <div class="error" id="errBox"></div>
+          <div class="status" id="urlBox"></div>
+        </div>
+
+        <div class="box" style="max-width:340px;">
+          <h3>QR Code</h3>
+          <div id="qrcodeWrap"><div id="qrcode"></div></div>
+          <div class="status">Scan to view text summary.</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const libStatus = document.getElementById("libStatus");
+  const errBox = document.getElementById("errBox");
+  const downloadBtn = document.getElementById("downloadBtn");
+  const urlBox = document.getElementById("urlBox");
+  const previewText = document.getElementById("previewText");
+
+  function setError(msg){ errBox.textContent = msg || ""; }
+  function isLibReady(){ return (typeof QRCode !== "undefined"); }
+
+  if(isLibReady()){
+    libStatus.textContent = "QR library loaded: OK";
+  }else{
+    libStatus.textContent = "QR library not loaded. CDN blocked or no internet.";
+  }
+
+  document.getElementById("genBtn").addEventListener("click", () => {
+    setError("");
+    downloadBtn.disabled = true;
+
+    if(!isLibReady()){
+      setError("QR library not loaded. Please allow cdnjs.cloudflare.com or use another network.");
+      return;
+    }
+
+    const name = document.getElementById("name").value.trim();
+    const passport = document.getElementById("passport").value.trim();
+    const visa = document.getElementById("visa").value.trim();
+    const validity = document.getElementById("validity").value.trim();
+
+    const sentence = "The image shows a document from the Kingdom of Cambodia General Department of Immigration for a stay permit.";
+
+    // Preview EXACT structure (same like screenshot)
+    const preview =
+`AI Overview
+
+${sentence}
+
+• Name: ${name || "-"}
+• Passport: ${passport || "-"}
+• Visa Type: ${visa || "-"}
+• Validity: ${validity || "-"}`;
+    previewText.textContent = preview;
+
+    // Build SHORT URL to avoid overflow
+    const u = new URL(location.href);
+    u.searchParams.set("view", "result");
+    u.searchParams.set("name", name);
+    u.searchParams.set("passport", passport);
+    u.searchParams.set("visa", visa);
+    u.searchParams.set("validity", validity);
+
+    const qrUrl = u.toString();
+    urlBox.textContent = "QR Target URL: " + qrUrl;
+
+    // Generate QR
+    const qrEl = document.getElementById("qrcode");
+    qrEl.innerHTML = "";
+
+    try{
+      new QRCode(qrEl, {
+        text: qrUrl,
+        width: 220,
+        height: 220,
+        correctLevel: QRCode.CorrectLevel.M
+      });
+
+      setTimeout(() => {
+        const hasCanvas = qrEl.querySelector("canvas");
+        const hasImg = qrEl.querySelector("img");
+        downloadBtn.disabled = !(hasCanvas || hasImg);
+      }, 150);
+
+    }catch(e){
+      setError("QR generation failed: " + (e && e.message ? e.message : "Unknown error"));
+    }
+  });
+
+  document.getElementById("downloadBtn").addEventListener("click", () => {
+    setError("");
+    const qrEl = document.getElementById("qrcode");
+    const canvas = qrEl.querySelector("canvas");
+    const img = qrEl.querySelector("img");
+
+    let dataUrl = "";
+    if(canvas){
+      dataUrl = canvas.toDataURL("image/png");
+    }else if(img && img.src){
+      dataUrl = img.src;
+    }else{
+      setError("Nothing to download. Please generate QR first.");
+      return;
+    }
+
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = "ai-overview-qr.png";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  });
+}
+if(getParam("view") === "result"){
+  renderResultView();
+}else{
+  renderGeneratorView();
+}
+</script>
+
+</body>
+</html>
